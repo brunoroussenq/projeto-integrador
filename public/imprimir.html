@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Imprimir Ordem de Serviço</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #525659;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px 0;
+            color: #000;
+        }
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 15mm 20mm;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.4);
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        .header-box {
+            border-bottom: 2px solid #000;
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+        }
+        .company-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #004A8D;
+            text-transform: uppercase;
+        }
+        .os-badge {
+            font-size: 22px;
+            font-weight: bold;
+            border: 2px solid #004A8D;
+            padding: 6px 14px;
+            display: inline-block;
+            border-radius: 4px;
+            color: #004A8D;
+        }
+        .section-title {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            font-size: 13px;
+            padding: 4px 8px;
+            border-left: 4px solid #004A8D;
+            margin-top: 15px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        .info-table td {
+            padding: 4px 6px;
+            vertical-align: top;
+        }
+        .data-label {
+            font-weight: bold;
+            width: 140px;
+            color: #333;
+        }
+        .parts-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+        }
+        .parts-table th, .parts-table td {
+            border: 1px solid #ccc;
+            padding: 6px 8px;
+            font-size: 12px;
+        }
+        .parts-table th {
+            background-color: #f7f7f7;
+            font-weight: bold;
+        }
+        .total-box {
+            border: 2px solid #333;
+            padding: 10px;
+            background-color: #fafafa;
+            margin-top: 12px;
+        }
+        .signature-box {
+            margin-top: 40px;
+            padding-top: 10px;
+        }
+        .signature-line {
+            border-top: 1px solid #000;
+            width: 85%;
+            margin: 0 auto;
+            text-align: center;
+            padding-top: 5px;
+            font-size: 12px;
+        }
+        .terms {
+            font-size: 10px;
+            color: #555;
+            text-align: justify;
+            margin-top: 20px;
+            border-top: 1px dashed #ccc;
+            padding-top: 8px;
+        }
+        /* Barra de Ações no Topo da Tela */
+        .no-print-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #212529;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            z-index: 9999;
+        }
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .page {
+                box-shadow: none;
+                margin: 0;
+                width: 100%;
+                min-height: auto;
+                padding: 10mm 15mm;
+            }
+            .no-print-bar {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Barra de Controle Superior (Não aparece na impressão) -->
+    <div class="no-print-bar">
+        <div>
+            <strong>Visualização para Impressão da OS</strong>
+            <span class="text-muted ms-2 small">Pressione "Imprimir / Salvar como PDF" para gerar o documento oficial.</span>
+        </div>
+        <div>
+            <button class="btn btn-success btn-sm me-2 fw-bold" onclick="window.print()">
+                🖨️ Imprimir / Salvar como PDF
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="window.close()">Fechar</button>
+        </div>
+    </div>
+
+    <div style="height: 50px;" class="d-print-none"></div>
+
+    <!-- FOLHA A4 DA ORDEM DE SERVIÇO -->
+    <div class="page">
+        <!-- CABEÇALHO DA EMPRESA -->
+        <div class="header-box d-flex justify-content-between align-items-center">
+            <div>
+                <div class="company-title">EletroTech - Assistência Técnica</div>
+                <div class="text-muted small">Manutenção Eletrônica, TV, Notebooks e Informática</div>
+                <div class="small">Rua Universitária, 1105 - Criciúma / SC | Tel: (48) 98819-0003</div>
+                <div class="small">CNPJ: 00.000.000/0001-00 | E-mail: contato@eletrotech.com.br</div>
+            </div>
+            <div class="text-end">
+                <div class="os-badge" id="printOSNumero">OS #0000</div>
+                <div class="small text-muted mt-1">Data: <span id="printOSData">--/--/----</span></div>
+                <div class="small">Status: <strong id="printOSStatus" class="text-uppercase">--</strong></div>
+            </div>
+        </div>
+
+        <!-- DADOS DO CLIENTE -->
+        <div class="section-title">1. Identificação do Cliente</div>
+        <table class="w-100 info-table">
+            <tr>
+                <td class="data-label">Cliente / Razão Social:</td>
+                <td id="printCliNome">------------------------</td>
+                <td class="data-label">Telefone / WhatsApp:</td>
+                <td id="printCliWhatsApp">------------------------</td>
+            </tr>
+            <tr>
+                <td class="data-label">E-mail:</td>
+                <td id="printCliEmail" colspan="3">------------------------</td>
+            </tr>
+        </table>
+
+        <!-- DADOS DO EQUIPAMENTO E DEFEITO -->
+        <div class="section-title">2. Dados do Equipamento e Defeito Relatado</div>
+        <table class="w-100 info-table">
+            <tr>
+                <td class="data-label">Equipamento / Modelo:</td>
+                <td id="printEqModelo" class="fw-bold">------------------------</td>
+                <td class="data-label">Marca / Tipo:</td>
+                <td id="printEqMarca">------------------------</td>
+            </tr>
+            <tr>
+                <td class="data-label">Nº de Série:</td>
+                <td id="printEqSerie" colspan="3">------------------------</td>
+            </tr>
+            <tr>
+                <td class="data-label">Defeito Informado:</td>
+                <td colspan="3" id="printDefeito" class="text-danger fw-bold">------------------------</td>
+            </tr>
+            <tr>
+                <td class="data-label">Laudo Técnico / Diagnóstico:</td>
+                <td colspan="3" id="printLaudo">Aparelho submetido a testes na bancada técnica. Serviço executado de acordo com as especificações técnicas recomendadas.</td>
+            </tr>
+        </table>
+
+        <!-- PEÇAS E MATERIAIS UTILIZADOS -->
+        <div class="section-title">3. Peças e Componentes Aplicados</div>
+        <table class="parts-table">
+            <thead>
+                <tr>
+                    <th style="width: 15%;">Código Ref.</th>
+                    <th style="width: 55%;">Descrição do Componente</th>
+                    <th style="width: 10%; text-align: center;">Qtd</th>
+                    <th style="width: 10%; text-align: right;">Unitário</th>
+                    <th style="width: 10%; text-align: right;">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody id="printTabelaItens">
+                <tr><td colspan="5" class="text-center text-muted">Nenhum componente substituído.</td></tr>
+            </tbody>
+        </table>
+
+        <!-- TOTALIZADOR -->
+        <div class="total-box">
+            <div class="row align-items-center">
+                <div class="col-8">
+                    <div>Subtotal em Peças / Insumos: <strong>R$ <span id="printTotalPecas">0,00</span></strong></div>
+                    <div>Serviços e Mão de Obra Técnica: <strong>R$ <span id="printMaoObra">0,00</span></strong></div>
+                </div>
+                <div class="col-4 text-end">
+                    <span class="small text-muted d-block text-uppercase">Valor Total da OS</span>
+                    <span class="fs-4 fw-bold" style="color: #004A8D;">R$ <span id="printTotalGeral">0,00</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TERMOS E CONDIÇÕES -->
+        <div class="terms">
+            <strong>Termos e Condições de Garantia:</strong><br>
+            1. A garantia sobre os serviços prestados e peças substituídas é de <strong>90 (noventa) dias</strong> a contar da data de entrega, conforme artigo 26, II da Lei Federal nº 8.078/1990 (Código de Defesa do Consumidor).<br>
+            2. A garantia não cobre danos decorrentes de quedas, descargas atmosféricas/elétricas, oxidação por umidade, mau uso ou intervenção por terceiros não autorizados.<br>
+            3. Equipamentos prontos que não forem retirados no prazo de até 90 dias após a notificação poderão ter cobrança diária de armazenagem.
+        </div>
+
+        <!-- ASSINATURAS -->
+        <div class="signature-box">
+            <div class="row">
+                <div class="col-6 text-center">
+                    <div class="signature-line">
+                        <strong>EletroTech Manutenções</strong><br>
+                        Técnico Responsável
+                    </div>
+                </div>
+                <div class="col-6 text-center">
+                    <div class="signature-line">
+                        <strong id="printAssinaturaNome">Assinatura do Cliente</strong><br>
+                        Declaro que recebi o equipamento testado e em perfeitas condições.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const osId = urlParams.get('id');
+
+        async function carregarDadosImpressao() {
+            if(!osId) {
+                alert('Número da OS não informado.');
+                return;
+            }
+
+            try {
+                // 1. Carrega dados da OS
+                const resOS = await fetch('http://localhost:3000/api/os/' + osId);
+                const os = await resOS.json();
+
+                document.getElementById('printOSNumero').innerText = 'OS #' + os.id_os;
+                document.getElementById('printOSData').innerText = os.data_abertura_formatada || new Date().toLocaleDateString('pt-BR');
+                document.getElementById('printOSStatus').innerText = (os.status_os || '').replace('_', ' ');
+
+                document.getElementById('printCliNome').innerText = os.cliente || '-';
+                document.getElementById('printCliWhatsApp').innerText = os.whatsapp || '-';
+                document.getElementById('printCliEmail').innerText = os.email || '-';
+                document.getElementById('printAssinaturaNome').innerText = os.cliente || 'Assinatura do Cliente';
+
+                document.getElementById('printEqModelo').innerText = os.aparelho || '-';
+                document.getElementById('printEqMarca').innerText = (os.marca || '-') + ' (' + (os.tipo_aparelho || 'Eletrônico') + ')';
+                document.getElementById('printEqSerie').innerText = os.num_serie || 'Não especificado';
+                document.getElementById('printDefeito').innerText = os.defeito_relatado || '-';
+
+                // 2. Carrega Peças
+                const resItens = await fetch('http://localhost:3000/api/os/' + osId + '/itens');
+                const itens = await resItens.json();
+
+                const tabela = document.getElementById('printTabelaItens');
+                tabela.innerHTML = '';
+                let totalPecas = 0;
+
+                if (itens.length === 0) {
+                    tabela.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Nenhum componente substituído nesta Ordem de Serviço.</td></tr>';
+                } else {
+                    itens.forEach(item => {
+                        totalPecas += Number(item.subtotal);
+                        tabela.innerHTML += `
+                            <tr>
+                                <td>${item.codigo_ref || '-'}</td>
+                                <td>${item.descricao}</td>
+                                <td class="text-center">${item.quantidade}</td>
+                                <td class="text-end">R$ ${Number(item.valor_unitario).toFixed(2)}</td>
+                                <td class="text-end">R$ ${Number(item.subtotal).toFixed(2)}</td>
+                            </tr>
+                        `;
+                    });
+                }
+
+                const maoObra = Number(os.valor_mao_obra || 0);
+                const totalGeral = totalPecas + maoObra;
+
+                document.getElementById('printTotalPecas').innerText = totalPecas.toFixed(2);
+                document.getElementById('printMaoObra').innerText = maoObra.toFixed(2);
+                document.getElementById('printTotalGeral').innerText = totalGeral.toFixed(2);
+
+            } catch (err) {
+                console.error(err);
+                alert('Erro ao carregar dados da OS para impressão.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', carregarDadosImpressao);
+    </script>
+</body>
+</html>

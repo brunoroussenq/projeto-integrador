@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Vendas / Faturamento - OS System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-dark text-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary">
+    <div class="container">
+        <a class="navbar-brand text-primary fw-bold" href="index.html">OS System</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-toggle="target" aria-controls="navbarNav"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <!-- Padrão Menu Simples -->
+                <li class="nav-item"><a class="nav-link " href="os.html">Ordens de Serviço</a></li>
+                
+                <!-- Padrão Menu Dropdown (Pode ser replicado para outros) -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle " href="#" id="navbarCadastro" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Cadastros
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-dark border-secondary" aria-labelledby="navbarCadastro">
+                        <li><a class="dropdown-item " href="clientes.html">Clientes</a></li>
+                        <li><a class="dropdown-item " href="estoque.html">Estoque (Peças)</a></li>
+                    </ul>
+                </li>
+                
+                <!-- Padrão Menu Simples -->
+                <li class="nav-item"><a class="nav-link active" href="vendas.html">Vendas</a></li>
+            </ul>
+            <div class="d-flex">
+                <span class="navbar-text me-3 text-light" id="userNomeDisplay"></span>
+                <button class="btn btn-outline-danger btn-sm" onclick="logout()">Sair</button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+    <div class="container mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold mb-1">Vendas e Faturamento</h2>
+                <span class="text-muted small">Gerenciamento de Ordens de Serviço faturadas e pagamentos</span>
+            </div>
+            <button class="btn btn-success fw-bold px-3" data-bs-toggle="modal" data-bs-target="#modalNovaVenda">
+                + Faturar Ordem de Serviço
+            </button>
+        </div>
+
+        <div class="card bg-dark border-secondary">
+            <div class="card-body">
+                <table class="table table-dark table-hover mt-3 align-middle">
+                    <thead>
+                        <tr>
+                            <th>Nº Venda</th>
+                            <th>Nº OS</th>
+                            <th>Cliente</th>
+                            <th>Data Venda</th>
+                            <th>Pagamento(s)</th>
+                            <th>Desconto</th>
+                            <th>Valor Final</th>
+                            <th class="text-end">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaVendas"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nova Venda / Faturar OS -->
+    <div class="modal fade" id="modalNovaVenda" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-light border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-success fw-bold">Faturar Ordem de Serviço</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formVenda">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-light">Selecione a Ordem de Serviço Concluída</label>
+                            <select class="form-select bg-secondary text-light border-0" id="selectOSFaturar" required onchange="aoSelecionarOSFaturar()">
+                                <option value="">Carregando...</option>
+                            </select>
+                            <small class="text-muted">*Apenas OS com status "Concluído" estão liberadas para faturamento.</small>
+                        </div>
+
+                        <!-- Card de Resumo e Desconto -->
+                        <div id="cardResumoOSFaturar" class="card bg-dark border border-secondary p-3 mb-3 d-none">
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span class="text-muted">Cliente:</span>
+                                <strong id="vendaResumoCliente">--</strong>
+                            </div>
+                            <div class="d-flex justify-content-between small mb-2">
+                                <span class="text-muted">Valor da OS:</span>
+                                <strong>R$ <span id="vendaValorOSOriginal">0.00</span></strong>
+                            </div>
+                            <hr class="border-secondary my-2">
+                            <div class="row align-items-end mt-2">
+                                <div class="col-6">
+                                    <label class="form-label fw-bold small text-info mb-1">Aplicar Desconto (R$)</label>
+                                    <input type="number" step="0.01" class="form-control form-control-sm bg-secondary text-light border-0" id="vendaDesconto" value="0.00" oninput="atualizarResumoVenda()">
+                                </div>
+                                <div class="col-6 text-end">
+                                    <span class="fw-bold text-warning small">TOTAL A PAGAR:</span><br>
+                                    <span class="fw-bold fs-5 text-success">R$ <span id="vendaValorFinal">0.00</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Seção de Pagamentos Múltiplos -->
+                        <div id="sectionPagamentos" class="d-none">
+                            <h6 class="fw-bold text-info mb-3">Formas de Pagamento</h6>
+                            <div class="row g-2 mb-3">
+                                <div class="col-5">
+                                    <select class="form-select form-select-sm bg-secondary text-light border-0" id="vendaFormaInput">
+                                        <option value="Dinheiro">💵 Dinheiro</option>
+                                        <option value="PIX">⚡ PIX</option>
+                                        <option value="Cartão de Crédito">💳 Crédito</option>
+                                        <option value="Cartão de Débito">💳 Débito</option>
+                                    </select>
+                                </div>
+                                <div class="col-4">
+                                    <input type="number" step="0.01" class="form-control form-control-sm bg-secondary text-light border-0" id="vendaValorInput" placeholder="Valor R$">
+                                </div>
+                                <div class="col-3">
+                                    <button type="button" class="btn btn-sm btn-primary w-100" onclick="adicionarPagamentoVenda()">Adicionar</button>
+                                </div>
+                            </div>
+                            
+                            <ul class="list-group mb-2" id="listaPagamentosVenda" style="font-size: 0.9rem;"></ul>
+                            
+                            <div class="text-end small mt-2">
+                                <span id="textoFaltaTroco" class="text-muted">Falta Pagar:</span> 
+                                <strong id="vendaFalta" class="fs-6">R$ 0.00</strong>
+                            </div>
+                        </div>
+
+                        <div class="mb-3 mt-3">
+                            <label class="form-label fw-bold small text-muted">Observações</label>
+                            <input type="text" class="form-control form-control-sm bg-secondary text-light border-0" id="vendaObservacoes">
+                        </div>
+
+                        <div class="modal-footer border-secondary px-0 pb-0">
+                            <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-success fw-bold px-4">Concluir Faturamento</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Venda (COM AS MESMAS OPÇÕES E BOTÃO DE CANCELAR VENDA) -->
+    <div class="modal fade" id="modalEditarVenda" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-light border-secondary">
+                <div class="modal-header border-secondary d-flex justify-content-between align-items-center">
+                    <h5 class="modal-title text-warning fw-bold mb-0">Editar Venda #<span id="editVendaIDLabel"></span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEditVenda">
+                        <input type="hidden" id="editVendaID">
+
+                        <!-- Card de Resumo da OS e Desconto -->
+                        <div class="card bg-dark border border-secondary p-3 mb-3">
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span class="text-muted">Cliente:</span>
+                                <strong id="editVendaResumoCliente">--</strong>
+                            </div>
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span class="text-muted">Aparelho:</span>
+                                <strong id="editVendaResumoAparelho">--</strong>
+                            </div>
+                            <div class="d-flex justify-content-between small mb-2">
+                                <span class="text-muted">Valor da OS:</span>
+                                <strong>R$ <span id="editVendaValorOSOriginal">0.00</span></strong>
+                            </div>
+                            <hr class="border-secondary my-2">
+                            <div class="row align-items-end mt-2">
+                                <div class="col-6">
+                                    <label class="form-label fw-bold small text-info mb-1">Aplicar Desconto (R$)</label>
+                                    <input type="number" step="0.01" class="form-control form-control-sm bg-secondary text-light border-0" id="editVendaDesconto" value="0.00" oninput="atualizarResumoEditVenda()">
+                                </div>
+                                <div class="col-6 text-end">
+                                    <span class="fw-bold text-warning small">TOTAL A PAGAR:</span><br>
+                                    <span class="fw-bold fs-5 text-success">R$ <span id="editVendaValorFinal">0.00</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Seção de Pagamentos Múltiplos na Edição -->
+                        <div>
+                            <h6 class="fw-bold text-info mb-3">Formas de Pagamento</h6>
+                            <div class="row g-2 mb-3">
+                                <div class="col-5">
+                                    <select class="form-select form-select-sm bg-secondary text-light border-0" id="editVendaFormaInput">
+                                        <option value="Dinheiro">💵 Dinheiro</option>
+                                        <option value="PIX">⚡ PIX</option>
+                                        <option value="Cartão de Crédito">💳 Crédito</option>
+                                        <option value="Cartão de Débito">💳 Débito</option>
+                                    </select>
+                                </div>
+                                <div class="col-4">
+                                    <input type="number" step="0.01" class="form-control form-control-sm bg-secondary text-light border-0" id="editVendaValorInput" placeholder="Valor R$">
+                                </div>
+                                <div class="col-3">
+                                    <button type="button" class="btn btn-sm btn-primary w-100" onclick="adicionarPagamentoEditVenda()">Adicionar</button>
+                                </div>
+                            </div>
+                            
+                            <ul class="list-group mb-2" id="listaPagamentosEditVenda" style="font-size: 0.9rem;"></ul>
+                            
+                            <div class="text-end small mt-2">
+                                <span id="editTextoFaltaTroco" class="text-muted">Saldo Pendente:</span> 
+                                <strong id="editVendaFalta" class="fs-6">R$ 0.00</strong>
+                            </div>
+                        </div>
+
+                        <div class="mb-3 mt-3">
+                            <label class="form-label fw-bold small text-muted">Observações</label>
+                            <input type="text" class="form-control form-control-sm bg-secondary text-light border-0" id="editVendaObservacoes">
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center border-top border-secondary pt-3 mt-3">
+                            <button type="button" class="btn btn-outline-danger fw-bold" onclick="cancelarVendaAtual()">
+                                🗑️ Cancelar Venda
+                            </button>
+                            <button type="submit" class="btn btn-success fw-bold px-4">
+                                Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

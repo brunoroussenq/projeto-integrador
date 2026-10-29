@@ -7,36 +7,27 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="bg-dark text-light">
+    
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary">
-    <div class="container">
-        <a class="navbar-brand text-primary fw-bold" href="index.html">OS System</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-toggle="target" aria-controls="navbarNav"><span class="navbar-toggler-icon"></span></button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <!-- Padrão Menu Simples -->
-                <li class="nav-item"><a class="nav-link " href="os.html">Ordens de Serviço</a></li>
-                
-                <!-- Padrão Menu Dropdown (Pode ser replicado para outros) -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle " href="#" id="navbarCadastro" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        Cadastros
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-dark border-secondary" aria-labelledby="navbarCadastro">
-                        <li><a class="dropdown-item " href="clientes.html">Clientes</a></li>
-                        <li><a class="dropdown-item " href="estoque.html">Estoque (Peças)</a></li>
-                    </ul>
-                </li>
-                
-                <!-- Padrão Menu Simples -->
-                <li class="nav-item"><a class="nav-link active" href="vendas.html">Vendas</a></li>
-            </ul>
-            <div class="d-flex">
-                <span class="navbar-text me-3 text-light" id="userNomeDisplay"></span>
-                <button class="btn btn-outline-danger btn-sm" onclick="logout()">Sair</button>
+        <div class="container">
+            <a class="navbar-brand text-primary fw-bold" href="index.html">OS System</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav"><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <!-- O item "Dashboard" foi removido conforme solicitado -->
+                    <li class="nav-item"><a class="nav-link " href="os.html">Ordens de Serviço</a></li>
+                    <li class="nav-item"><a class="nav-link " href="clientes.html">Clientes</a></li>
+                    <li class="nav-item"><a class="nav-link " href="estoque.html">Estoque</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="vendas.html">Vendas</a></li>
+                </ul>
+                <div class="d-flex">
+                    <span class="navbar-text me-3 text-light" id="userNomeDisplay"></span>
+                    <button class="btn btn-outline-danger btn-sm" onclick="logout()">Sair</button>
+                </div>
             </div>
         </div>
-    </div>
-</nav>
+    </nav>
+
 
     <div class="container mt-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -154,7 +145,7 @@
         </div>
     </div>
 
-    <!-- Modal Editar Venda (COM AS MESMAS OPÇÕES E BOTÃO DE CANCELAR VENDA) -->
+    <!-- Modal Editar Venda -->
     <div class="modal fade" id="modalEditarVenda" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content bg-dark text-light border-secondary">

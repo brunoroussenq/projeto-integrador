@@ -1,7 +1,6 @@
 const express = require('express');
 const fs = require('fs/promises');
 const path = require('path');
-const { randomUUID } = require('crypto');
 const router = express.Router();
 const db = require('../config/db');
 
@@ -46,8 +45,12 @@ function garantirTabela() {
                 cidade VARCHAR(100) NOT NULL DEFAULT '',
                 uf CHAR(2) NOT NULL DEFAULT '',
                 logo_path VARCHAR(255) NULL,
+                logo_data MEDIUMTEXT NULL,
                 atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )`);
+            const [colunas] = await db.execute(`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'empresa' AND COLUMN_NAME = 'logo_data'`);
+            if (!colunas.length) await db.execute('ALTER TABLE empresa ADD COLUMN logo_data MEDIUMTEXT NULL');
             await db.execute('INSERT IGNORE INTO empresa (id_empresa) VALUES (1)');
         })().catch(error => {
             tabelaPronta = null;
@@ -92,22 +95,60 @@ function decodificarLogo(dataUrl) {
     else if (dados.toString('ascii', 0, 4) === 'RIFF' && dados.toString('ascii', 8, 12) === 'WEBP') extensao = 'webp';
     else throw new Error('O conteúdo do arquivo não corresponde a uma imagem PNG, JPG ou WebP.');
 
-    return { dados, extensao };
+    return { dados, extensao, mime: extensao === 'jpg' ? 'jpeg' : extensao };
+}
+
+async function obterLogoDataUrl() {
+    const [rows] = await db.execute('SELECT logo_data, logo_path FROM empresa WHERE id_empresa = 1');
+    const empresa = rows[0];
+    if (empresa.logo_data) return empresa.logo_data;
+    if (!empresa.logo_path) return null;
+
+    const caminho = caminhoSeguro(empresa.logo_path);
+    if (!caminho) return null;
+    try {
+        const imagem = await fs.readFile(caminho);
+        const mimePorExtensao = { '.png': 'png', '.jpg': 'jpeg', '.jpeg': 'jpeg', '.webp': 'webp' };
+        const mime = mimePorExtensao[path.extname(caminho).toLowerCase()];
+        if (!mime) return null;
+        const logoDataUrl = `data:image/${mime};base64,${imagem.toString('base64')}`;
+        decodificarLogo(logoDataUrl);
+        await db.execute('UPDATE empresa SET logo_data = ?, logo_path = NULL WHERE id_empresa = 1', [logoDataUrl]);
+        return logoDataUrl;
+    } catch (error) {
+        if (error.code !== 'ENOENT') throw error;
+        await db.execute('UPDATE empresa SET logo_path = NULL WHERE id_empresa = 1');
+        return null;
+    }
 }
 
 router.get('/', async (req, res) => {
     try {
         const [rows] = await db.execute('SELECT * FROM empresa WHERE id_empresa = 1');
         const empresa = rows[0];
-        res.json({ ...empresa, logo_url: empresa.logo_path || null });
+        const logoDataUrl = await obterLogoDataUrl();
+        res.json({ ...empresa, logo_path: null, logo_data: undefined, logo_url: logoDataUrl ? '/api/empresa/logo' : null });
     } catch (error) {
         console.error('Erro ao carregar cadastro da empresa:', error);
         res.status(500).json({ error: 'Erro ao carregar os dados da empresa.' });
     }
 });
 
+router.get('/logo', async (req, res) => {
+    try {
+        const logoDataUrl = await obterLogoDataUrl();
+        if (!logoDataUrl) return res.status(404).json({ error: 'A empresa ainda não possui logo.' });
+        const { dados, mime } = decodificarLogo(logoDataUrl);
+        res.set('Content-Type', `image/${mime}`);
+        res.set('Cache-Control', 'no-store');
+        res.send(dados);
+    } catch (error) {
+        console.error('Erro ao carregar logo da empresa:', error);
+        res.status(500).json({ error: 'Erro ao carregar a logo da empresa.' });
+    }
+});
+
 router.put('/', async (req, res) => {
-    let novoLogoPath = null;
     try {
         const dados = {};
         for (const [campo, limite] of Object.entries(campos)) {
@@ -122,30 +163,34 @@ router.put('/', async (req, res) => {
             return res.status(400).json({ error: 'Informe um e-mail válido.' });
         }
 
-        const [atuais] = await db.execute('SELECT logo_path FROM empresa WHERE id_empresa = 1');
+        const [atuais] = await db.execute('SELECT logo_path, logo_data FROM empresa WHERE id_empresa = 1');
         let logoPath = atuais[0]?.logo_path || null;
-        if (req.body.remover_logo === true) logoPath = null;
+        let logoData = atuais[0]?.logo_data || null;
+        if (!logoData && logoPath) {
+            logoData = await obterLogoDataUrl();
+            if (logoData) logoPath = null;
+        }
+        if (req.body.remover_logo === true) {
+            logoData = null;
+            logoPath = null;
+        }
         if (req.body.logo_data_url) {
-            const { dados: imagem, extensao } = decodificarLogo(req.body.logo_data_url);
-            await fs.mkdir(uploadDir, { recursive: true });
-            const nomeArquivo = `${randomUUID()}.${extensao}`;
-            await fs.writeFile(path.join(uploadDir, nomeArquivo), imagem, { flag: 'wx' });
-            novoLogoPath = `/uploads/empresa/${nomeArquivo}`;
-            logoPath = novoLogoPath;
+            const { dados: imagem, mime } = decodificarLogo(req.body.logo_data_url);
+            logoData = `data:image/${mime};base64,${imagem.toString('base64')}`;
+            logoPath = null;
         }
 
         const valores = Object.keys(campos).map(campo => dados[campo]);
-        valores.push(logoPath);
+        valores.push(logoPath, logoData);
         await db.execute(`INSERT INTO empresa (
-            id_empresa, ${Object.keys(campos).join(', ')}, logo_path
-        ) VALUES (1, ${Object.keys(campos).map(() => '?').join(', ')}, ?)
-        ON DUPLICATE KEY UPDATE ${Object.keys(campos).map(campo => `${campo} = VALUES(${campo})`).join(', ')}, logo_path = VALUES(logo_path)`, valores);
+            id_empresa, ${Object.keys(campos).join(', ')}, logo_path, logo_data
+        ) VALUES (1, ${Object.keys(campos).map(() => '?').join(', ')}, ?, ?)
+        ON DUPLICATE KEY UPDATE ${Object.keys(campos).map(campo => `${campo} = VALUES(${campo})`).join(', ')}, logo_path = VALUES(logo_path), logo_data = VALUES(logo_data)`, valores);
 
         const logoAnterior = atuais[0]?.logo_path;
-        if (logoAnterior && logoAnterior !== logoPath) await removerArquivoLogo(logoAnterior);
-        res.json({ success: true, message: 'Dados da empresa salvos.', logo_url: logoPath });
+        if (logoAnterior) await removerArquivoLogo(logoAnterior);
+        res.json({ success: true, message: 'Dados da empresa salvos.', logo_url: logoData ? '/api/empresa/logo' : null });
     } catch (error) {
-        if (novoLogoPath) await removerArquivoLogo(novoLogoPath);
         if (error.message && /^(Selecione|A logo|O conteúdo)/.test(error.message)) return res.status(400).json({ error: error.message });
         console.error('Erro ao salvar cadastro da empresa:', error);
         res.status(500).json({ error: 'Erro ao salvar os dados da empresa.' });

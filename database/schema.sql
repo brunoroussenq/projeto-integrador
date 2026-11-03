@@ -9,6 +9,27 @@ CREATE TABLE IF NOT EXISTS usuarios (
 );
 INSERT IGNORE INTO usuarios (id_usuario, nome, email, senha) VALUES (1, 'Administrador', 'admin@admin.com', '123456');
 
+CREATE TABLE IF NOT EXISTS empresa (
+    id_empresa TINYINT UNSIGNED PRIMARY KEY DEFAULT 1,
+    razao_social VARCHAR(150) NOT NULL DEFAULT '',
+    nome_fantasia VARCHAR(150) NOT NULL DEFAULT '',
+    cnpj VARCHAR(20) NOT NULL DEFAULT '',
+    inscricao_estadual VARCHAR(40) NOT NULL DEFAULT '',
+    email VARCHAR(150) NOT NULL DEFAULT '',
+    telefone VARCHAR(25) NOT NULL DEFAULT '',
+    whatsapp VARCHAR(25) NOT NULL DEFAULT '',
+    cep VARCHAR(10) NOT NULL DEFAULT '',
+    logradouro VARCHAR(150) NOT NULL DEFAULT '',
+    numero VARCHAR(20) NOT NULL DEFAULT '',
+    complemento VARCHAR(80) NOT NULL DEFAULT '',
+    bairro VARCHAR(100) NOT NULL DEFAULT '',
+    cidade VARCHAR(100) NOT NULL DEFAULT '',
+    uf CHAR(2) NOT NULL DEFAULT '',
+    logo_path VARCHAR(255) NULL,
+    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+INSERT IGNORE INTO empresa (id_empresa) VALUES (1);
+
 CREATE TABLE IF NOT EXISTS clientes (
     id_cliente INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(120) NOT NULL,

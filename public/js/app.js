@@ -408,8 +408,25 @@ if(formUpdateOS) {
     });
 }
 
+function atualizarPreviaOS() {
+    const cliente = document.getElementById('clienteOS');
+    if (!cliente) return;
+    const opcaoCliente = cliente.options[cliente.selectedIndex];
+    const clienteNome = opcaoCliente && cliente.value ? opcaoCliente.textContent.split(' (')[0] : 'Selecione um cliente';
+    const clienteContato = opcaoCliente && cliente.value ? (opcaoCliente.textContent.match(/\((.*)\)$/) || [])[1] || '—' : '—';
+    document.getElementById('previewCliente').textContent = clienteNome;
+    document.getElementById('previewContato').textContent = clienteContato;
+    document.getElementById('previewAparelho').textContent = document.getElementById('aparelhoOS').value.trim() || 'Aguardando preenchimento';
+    document.getElementById('previewDefeito').textContent = document.getElementById('defeitoOS').value.trim() || 'A descrição aparecerá aqui.';
+}
+
 const formOS = document.getElementById('formOS');
 if (formOS) {
+    ['clienteOS', 'aparelhoOS', 'defeitoOS'].forEach(id => {
+        document.getElementById(id).addEventListener(id === 'clienteOS' ? 'change' : 'input', atualizarPreviaOS);
+    });
+    formOS.addEventListener('reset', () => requestAnimationFrame(atualizarPreviaOS));
+    atualizarPreviaOS();
     formOS.addEventListener('submit', async (e) => {
         e.preventDefault();
         const dados = { id_cliente: document.getElementById('clienteOS').value, aparelho: document.getElementById('aparelhoOS').value, defeito: document.getElementById('defeitoOS').value };

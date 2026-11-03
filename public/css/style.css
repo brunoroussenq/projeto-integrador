@@ -8,3 +8,16 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-
 .history-item::before { content: ''; position: absolute; left: -6px; top: 0; width: 10px; height: 10px; border-radius: 50%; background: #0dcaf0; }
 .history-status::before { background: #ffc107; }
 .history-status { border-left-color: #ffc107; }
+
+/* Live preview while opening a service order */
+.preview-label { display: flex; justify-content: space-between; align-items: center; }
+.os-live-preview { min-height: 100%; padding: 1.25rem; background: #f8f9fa; color: #212529; border-radius: .5rem; box-shadow: 0 .25rem 1rem rgba(0,0,0,.18); }
+.preview-brand { color: #004a8d; font-size: 1.05rem; font-weight: 800; letter-spacing: .02em; }
+.preview-number { color: #dc3545; font-size: 1.25rem; }
+.preview-field { display: flex; flex-direction: column; margin-bottom: .7rem; overflow-wrap: anywhere; }
+.preview-field span, .preview-defect > span { color: #6c757d; font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; }
+.preview-defect { min-height: 5rem; padding: .75rem; background: #fff; border: 1px solid #dee2e6; border-radius: .35rem; }
+.preview-defect p { margin: .4rem 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.preview-table { --bs-table-bg: #fff; --bs-table-color: #212529; --bs-table-border-color: #dee2e6; }
+.preview-signature { border-top: 1px dashed #adb5bd; }
+@media (max-width: 991.98px) { .os-live-preview { min-height: auto; } }

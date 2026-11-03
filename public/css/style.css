@@ -1,6 +1,9 @@
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #212529 !important; color: #f8f9fa !important; }
 .card { background-color: #343a40; border: none; }
 .navbar { border-bottom: 1px solid #495057; }
+.company-navbar-logo { display: block; max-width: 180px; max-height: 40px; object-fit: contain; }
+.company-logo-preview { display: flex; align-items: center; justify-content: center; min-height: 145px; padding: 1rem; border: 1px dashed #6c757d; border-radius: .5rem; background: rgba(255,255,255,.03); }
+.company-logo-preview img { max-width: 100%; max-height: 125px; object-fit: contain; }
 .table { color: #f8f9fa; }
 .table-dark th { color: #adb5bd; }
 .clickable-row { cursor: pointer; color: #0dcaf0 !important; text-decoration: underline; }
@@ -21,3 +24,13 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-
 .preview-table { --bs-table-bg: #fff; --bs-table-color: #212529; --bs-table-border-color: #dee2e6; }
 .preview-signature { border-top: 1px dashed #adb5bd; }
 @media (max-width: 991.98px) { .os-live-preview { min-height: auto; } }
+
+@media print {
+    body { background: #fff !important; color: #212529 !important; }
+    nav, main > .d-flex button, section[aria-label="Filtros do relatório"],
+    #relatorioErro, #relatorioLoading { display: none !important; }
+    main.container { max-width: 100%; padding: 0 !important; }
+    .card, .card-header { background: #fff !important; color: #212529 !important; border-color: #adb5bd !important; }
+    .table { --bs-table-bg: #fff; --bs-table-color: #212529; --bs-table-border-color: #dee2e6; }
+    .text-secondary { color: #495057 !important; }
+}

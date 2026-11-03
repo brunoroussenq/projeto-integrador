@@ -750,8 +750,34 @@ function abrirJanelaImpressaoVenda(id) {
     window.open('imprimir-venda.html?id=' + id, '_blank');
 }
 
+async function atualizarMarcaSistema() {
+    const marca = document.querySelector('.navbar-brand[href="index.html"]');
+    if (!marca) return;
+    try {
+        const response = await fetch('/api/empresa');
+        if (!response.ok) return;
+        const empresa = await response.json();
+        if (!empresa.logo_url) return;
+
+        const nomeEmpresa = empresa.nome_fantasia || empresa.razao_social || 'Logo da empresa';
+        const imagem = document.createElement('img');
+        imagem.src = empresa.logo_url;
+        imagem.alt = nomeEmpresa;
+        imagem.className = 'company-navbar-logo';
+        imagem.addEventListener('error', () => {
+            marca.replaceChildren(document.createTextNode('OS System'));
+        }, { once: true });
+        marca.replaceChildren(imagem);
+        marca.setAttribute('aria-label', nomeEmpresa);
+        marca.title = nomeEmpresa;
+    } catch (error) {
+        console.warn('Não foi possível carregar a logo da empresa.');
+    }
+}
+
 // INICIALIZADOR GLOBAL
 document.addEventListener('DOMContentLoaded', () => {
+    atualizarMarcaSistema();
     carregarClientes();
     carregarDashboard();
     carregarOS();

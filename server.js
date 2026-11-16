@@ -7,6 +7,7 @@ app.use(cors());
 app.use(express.json({ limit: '3mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/consulta', require('./routes/consulta'));
 app.use('/api/clientes', require('./routes/clientes'));
 app.use('/api/os', require('./routes/os'));
 app.use('/api/pecas', require('./routes/pecas'));

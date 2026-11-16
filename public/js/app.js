@@ -100,6 +100,7 @@ async function carregarPecas() {
                 <td>R$ ${Number(x.preco_venda).toFixed(2)}</td>
                 <td>${badge}</td>
                 <td>
+                    <button class="btn btn-sm btn-outline-info me-1" onclick="abrirMovimentosEstoque(${x.id_peca})">Movimentar</button>
                     <button class="btn btn-sm btn-outline-warning me-1" onclick="abrirModalEditarPeca(${x.id_peca})">Alterar</button>
                     <button class="btn btn-sm btn-outline-danger" onclick="excluirPeca(${x.id_peca}, '${x.descricao.replace(/'/g, "\'")}')">Excluir</button>
                 </td>
@@ -143,7 +144,6 @@ async function abrirModalEditarPeca(id) {
         document.getElementById('editIdPeca').value = peca.id_peca;
         document.getElementById('editCodPeca').value = peca.codigo_ref;
         document.getElementById('editDescPeca').value = peca.descricao;
-        document.getElementById('editQtdPeca').value = peca.quantidade_estoque;
         document.getElementById('editMinPeca').value = peca.estoque_minimo;
         document.getElementById('editPrecoPeca').value = peca.preco_venda;
         new bootstrap.Modal(document.getElementById('modalEditarPeca')).show();
@@ -158,7 +158,6 @@ if(formEditPeca) {
         const dados = {
             codigo_ref: document.getElementById('editCodPeca').value,
             descricao: document.getElementById('editDescPeca').value,
-            quantidade_estoque: document.getElementById('editQtdPeca').value,
             estoque_minimo: document.getElementById('editMinPeca').value,
             preco_venda: document.getElementById('editPrecoPeca').value
         };
@@ -175,6 +174,48 @@ if(formEditPeca) {
                 carregarPecas();
             } else alert(data.error);
         } catch(e) { alert('Erro ao atualizar peça.'); }
+    });
+}
+
+async function abrirMovimentosEstoque(id) {
+    try {
+        const [pecaRes, movimentosRes] = await Promise.all([
+            fetch('/api/pecas/' + id),
+            fetch('/api/pecas/' + id + '/movimentos')
+        ]);
+        if (!pecaRes.ok || !movimentosRes.ok) throw new Error('Falha ao carregar movimentações.');
+        const peca = await pecaRes.json();
+        const movimentos = await movimentosRes.json();
+        document.getElementById('movimentoIdPeca').value = peca.id_peca;
+        document.getElementById('movimentoNomePeca').innerText = `${peca.codigo_ref || ''} ${peca.descricao}`;
+        document.getElementById('movimentoSaldoAtual').innerText = peca.quantidade_estoque;
+        const tabela = document.getElementById('tabelaMovimentosEstoque');
+        tabela.innerHTML = movimentos.length ? movimentos.map(m => `<tr><td>${m.data_movimento}</td><td><span class="badge ${m.tipo === 'Entrada' ? 'bg-success' : 'bg-warning text-dark'}">${m.tipo} ${m.quantidade}</span></td><td>${m.saldo_anterior} → ${m.saldo_atual}</td><td>${m.motivo}</td></tr>`).join('') : '<tr><td colspan="4" class="text-muted">Nenhuma movimentação registrada.</td></tr>';
+        document.getElementById('formMovimentoEstoque').reset();
+        document.getElementById('movimentoIdPeca').value = peca.id_peca;
+        new bootstrap.Modal(document.getElementById('modalMovimentoEstoque')).show();
+    } catch (error) { alert('Erro ao carregar o histórico de estoque.'); }
+}
+
+const formMovimentoEstoque = document.getElementById('formMovimentoEstoque');
+if (formMovimentoEstoque) {
+    formMovimentoEstoque.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('movimentoIdPeca').value;
+        try {
+            const res = await fetch(`/api/pecas/${id}/movimentos`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tipo: document.getElementById('tipoMovimento').value,
+                    quantidade: document.getElementById('qtdMovimento').value,
+                    motivo: document.getElementById('motivoMovimento').value
+                })
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) return alert(data.error || 'Erro ao movimentar estoque.');
+            bootstrap.Modal.getInstance(document.getElementById('modalMovimentoEstoque')).hide();
+            await carregarPecas();
+        } catch (error) { alert('Erro ao movimentar estoque.'); }
     });
 }
 
@@ -207,13 +248,21 @@ async function abrirDetalhePeca(id) {
 async function carregarDashboard() {
     const c = document.getElementById('countDiagnostico');
     if(!c) return;
+    const concluido = document.getElementById('countConcluido');
+    const peca = document.getElementById('countPeca');
     try {
         const r = await fetch('/api/dashboard/stats');
+        if (!r.ok) throw new Error(`API do dashboard retornou HTTP ${r.status}`);
         const s = await r.json();
-        c.innerText = s.diagnostico;
-        document.getElementById('countConcluido').innerText = s.concluido;
-        document.getElementById('countPeca').innerText = s.peca;
-    } catch(e) {}
+        for (const [element, value] of [[c, s.diagnostico], [concluido, s.concluido], [peca, s.peca]]) {
+            element.innerText = Number.isFinite(Number(value)) ? value : '—';
+        }
+    } catch(e) {
+        c.innerText = '—';
+        concluido.innerText = '—';
+        peca.innerText = '—';
+        console.error('Não foi possível carregar os indicadores do dashboard:', e);
+    }
 }
 
 async function carregarClientesParaSelect() {

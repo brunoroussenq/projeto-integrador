@@ -59,6 +59,18 @@ CREATE TABLE IF NOT EXISTS pecas (
     preco_venda DECIMAL(10,2) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS movimentos_estoque (
+    id_movimento INT AUTO_INCREMENT PRIMARY KEY,
+    id_peca INT NOT NULL,
+    tipo ENUM('Entrada', 'Saída') NOT NULL,
+    quantidade INT NOT NULL,
+    saldo_anterior INT NOT NULL,
+    saldo_atual INT NOT NULL,
+    motivo VARCHAR(255) NOT NULL,
+    data_movimento TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_peca) REFERENCES pecas(id_peca) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS ordens_servico (
     id_os INT AUTO_INCREMENT PRIMARY KEY,
     id_equipamento INT NOT NULL,

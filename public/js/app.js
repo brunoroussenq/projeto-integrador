@@ -25,6 +25,7 @@ if (formCliente) {
         e.preventDefault();
         const dados = {
             nome: document.getElementById('nomeCliente').value,
+            cpf: document.getElementById('cpfCliente').value,
             whatsapp: document.getElementById('whatsappCliente').value,
             email: document.getElementById('emailCliente').value
         };
@@ -34,12 +35,13 @@ if (formCliente) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dados)
             });
-            if ((await res.json()).success) {
+            const data = await res.json();
+            if (data.success) {
                 alert('Cliente salvo!');
                 bootstrap.Modal.getInstance(document.getElementById('modalNovoCliente')).hide();
                 formCliente.reset();
                 carregarClientes();
-            }
+            } else alert(data.error || 'Erro ao salvar cliente.');
         } catch (e) { alert('Erro ao salvar cliente.'); }
     });
 }
@@ -50,6 +52,7 @@ async function abrirModalEditarCliente(id) {
         const cli = await res.json();
         document.getElementById('editCliID').value = cli.id_cliente;
         document.getElementById('editCliNome').value = cli.nome;
+        document.getElementById('editCliCpf').value = cli.cpf || '';
         document.getElementById('editCliWhatsApp').value = cli.whatsapp;
         document.getElementById('editCliEmail').value = cli.email || '';
         document.getElementById('editCliStatus').value = cli.status;
@@ -64,6 +67,7 @@ if(formEditCliente) {
         const id = document.getElementById('editCliID').value;
         const dados = {
             nome: document.getElementById('editCliNome').value,
+            cpf: document.getElementById('editCliCpf').value,
             whatsapp: document.getElementById('editCliWhatsApp').value,
             email: document.getElementById('editCliEmail').value,
             status: document.getElementById('editCliStatus').value
@@ -74,11 +78,12 @@ if(formEditCliente) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dados)
             });
-            if ((await res.json()).success) {
+            const data = await res.json();
+            if (data.success) {
                 alert('Cliente atualizado!');
                 bootstrap.Modal.getInstance(document.getElementById('modalEditarCliente')).hide();
                 carregarClientes();
-            }
+            } else alert(data.error || 'Erro ao atualizar cliente.');
         } catch (e) { alert('Erro ao atualizar cliente.'); }
     });
 }

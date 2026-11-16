@@ -34,6 +34,7 @@ INSERT IGNORE INTO empresa (id_empresa) VALUES (1);
 CREATE TABLE IF NOT EXISTS clientes (
     id_cliente INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(120) NOT NULL,
+    cpf CHAR(11) UNIQUE,
     whatsapp VARCHAR(20) NOT NULL,
     email VARCHAR(100),
     status ENUM('Ativo', 'Bloqueado') DEFAULT 'Ativo',
